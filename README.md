@@ -30,7 +30,7 @@
 
 ### Установка
 
-\`\`\`bash
+```bash
 # Клонировать репозиторий
 git clone https://github.com/exemayj/tutor_platform.git
 cd tutor_platform
@@ -40,11 +40,11 @@ go mod tidy
 
 # Установить templ
 go install github.com/a-h/templ/cmd/templ@latest
-\`\`\`
+```
 
 ### Настройка базы данных
 
-\`\`\`bash
+```bash
 # Создать базу
 createdb tutor_platform
 
@@ -59,14 +59,14 @@ INSERT INTO subjects (name, slug) VALUES
 ('Английский язык', 'angliiskii-yazyk'),
 ('Физика', 'fizika'),
 ('Информатика', 'informatika');
-\q
-\`\`\`
+q
+```
 
 ### Настройка окружения
 
 Создать файл `.env`:
 
-\`\`\`
+```
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
@@ -74,20 +74,20 @@ DB_PASSWORD=
 DB_NAME=tutor_platform
 JWT_SECRET=your-secret-key
 SERVER_PORT=8080
-\`\`\`
+```
 
 ### Запуск
 
-\`\`\`bash
+```bash
 templ generate
 go run ./cmd/server/
-\`\`\`
+```
 
 Открыть `http://localhost:8080/`
 
 ## Структура проекта
 
-\`\`\`
+```
 tutor_platform/
 ├── cmd/server/          # точка входа
 ├── internal/
@@ -100,7 +100,7 @@ tutor_platform/
 │   ├── static/          # CSS, JS
 │   └── templates/       # templ-шаблоны
 └── .env.example
-\`\`\`
+```
 
 ## Лицензия
 
