@@ -1,0 +1,33 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Binaries
+*.exe
+*.bin
+*.out
+bin/
+dist/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Go
+vendor/
+*.test
+*.prof
+
+# Database
+*.sqlite
+*.db
+dump.sql
