@@ -1,0 +1,46 @@
+package layouts
+
+templ Base(title string, user UserInfo) {
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{ title } — Репетиторы</title>
+        <link rel="stylesheet" href="/static/css/style.css">
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <a href="/" class="logo">Репетиторы</a>
+                <nav>
+                    <a href="/catalog">Каталог</a>
+                    if user.IsLoggedIn {
+                        <a href="/profile">Профиль</a>
+                        <a href="/orders">Заявки</a>
+                        if user.IsTutor {
+                            <a href="/orders/received">Заявки от учеников</a>
+                        }
+                        <a href="/logout">Выход</a>
+                    } else {
+                        <a href="/login">Вход</a>
+                        <a href="/register">Регистрация</a>
+                    }
+                </nav>
+            </div>
+        </header>
+        <main class="container">
+            { children... }
+        </main>
+        <footer>
+            <div class="container">
+                <p>&copy; 2025 Репетиторы</p>
+                <p style="font-size: 12px;">
+                    <a href="/privacy">Политика конфиденциальности</a> &middot;
+                    <a href="/terms">Условия использования</a>
+                </p>
+            </div>
+        </footer>
+    </body>
+    </html>
+}

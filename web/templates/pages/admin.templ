@@ -1,0 +1,44 @@
+package pages
+
+import (
+    "tutor_platform/internal/models"
+    "tutor_platform/web/templates/layouts"
+)
+
+templ AdminDashboard(tutors []models.TutorProfile, user layouts.UserInfo) {
+    @layouts.Base("Админка", user) {
+        <h1>Админка</h1>
+        <h2>Репетиторы</h2>
+        if len(tutors) == 0 {
+            <p>Нет репетиторов.</p>
+        }
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Имя</th>
+                <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Заголовок</th>
+                <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Статус</th>
+                <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Действия</th>
+            </tr>
+            for _, t := range tutors {
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{ t.TutorName }</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{ t.Headline }</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                        if t.IsActive {
+                            <span style="color: green;">Активен</span>
+                        } else {
+                            <span style="color: red;">Заблокирован</span>
+                        }
+                    </td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                        if t.IsActive {
+                            <a href={ templ.URL("/admin/tutors/" + t.ID + "/block") } class="btn btn-danger">Заблокировать</a>
+                        } else {
+                            <a href={ templ.URL("/admin/tutors/" + t.ID + "/unblock") } class="btn btn-success">Разблокировать</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+}

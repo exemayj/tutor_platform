@@ -1,0 +1,74 @@
+package pages
+
+import (
+    "tutor_platform/internal/models"
+    "tutor_platform/web/templates/components"
+    "tutor_platform/web/templates/layouts"
+)
+
+templ StudentOrdersPage(orders []models.OrderView, user layouts.UserInfo) {
+    @layouts.Base("Мои заявки", user) {
+        <h1>Мои заявки</h1>
+        <a href="/">← На главную</a>
+        if len(orders) == 0 {
+            <p>У вас пока нет заявок.</p>
+        }
+        for _, o := range orders {
+            <div class="order-card">
+                <p><strong>Репетитор:</strong> { o.TutorName }</p>
+                <p><strong>Предмет:</strong> { o.SubjectName }</p>
+                <p><strong>Цель:</strong> { o.Goal }</p>
+                <p><strong>Статус:</strong> <span class={ "status status-" + o.Status }>{ components.StatusLabel(o.Status) }</span></p>
+                <p><strong>Дата:</strong> { o.CreatedAt.Format("02.01.2006 15:04") }</p>
+                if o.Status == "accepted" {
+                    <a href={ templ.URL("/chat/" + o.ID) } class="btn">Чат</a>
+                }
+            </div>
+        if o.Status == "completed" {
+            <form method="post" action="/reviews" style="margin-top: 10px;">
+                <input type="hidden" name="order_id" value={ o.ID }>
+                <input type="hidden" name="tutor_profile_id" value={ o.TutorProfileID }>
+                <label>Оценка:</label>
+                <select name="rating">
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                </select>
+                <textarea name="comment" placeholder="Ваш отзыв" rows="2"></textarea>
+                <button type="submit" class="btn">Оставить отзыв</button>
+            </form>
+        }
+
+        }
+    }
+}
+
+templ TutorOrdersPage(orders []models.OrderView, user layouts.UserInfo) {
+    @layouts.Base("Входящие заявки", user) {
+        <h1>Входящие заявки</h1>
+        <a href="/profile">← В профиль</a>
+        if len(orders) == 0 {
+            <p>У вас пока нет заявок от учеников.</p>
+        }
+        for _, o := range orders {
+            <div class="order-card">
+                <p><strong>Ученик:</strong> { o.StudentName }</p>
+                <p><strong>Телефон:</strong> { o.StudentPhone }</p>
+                <p><strong>Предмет:</strong> { o.SubjectName }</p>
+                <p><strong>Цель:</strong> { o.Goal }</p>
+                <p><strong>Статус:</strong> <span class={ "status status-" + o.Status }>{ components.StatusLabel(o.Status) }</span></p>
+                <p><strong>Дата:</strong> { o.CreatedAt.Format("02.01.2006 15:04") }</p>
+                if o.Status == "new" {
+                    <a href={ templ.URL("/orders/" + o.ID + "/accept") } class="btn btn-success">Принять</a>
+                    <a href={ templ.URL("/orders/" + o.ID + "/decline") } class="btn btn-danger">Отклонить</a>
+                }
+                if o.Status == "accepted" {
+                    <a href={ templ.URL("/chat/" + o.ID) } class="btn">Чат</a>
+                    <a href={ templ.URL("/orders/" + o.ID + "/complete") } class="btn">Завершить</a>
+                }
+            </div>
+        }
+    }
+}

@@ -1,0 +1,29 @@
+package pages
+
+import (
+    "tutor_platform/web/templates/layouts"
+)
+
+templ RegisterPage(errorMsg string, user layouts.UserInfo) {
+    @layouts.Base("Регистрация", user) {
+        <h1>Регистрация</h1>
+        if errorMsg != "" {
+            <div class="alert alert-error">{ errorMsg }</div>
+        }
+        <form method="post" action="/register">
+            <input name="name" type="text" placeholder="Имя" required>
+            <input name="email" type="email" placeholder="Email" required>
+            <input name="password" type="password" placeholder="Пароль (мин 6 символов)" required>
+            <select name="role">
+                <option value="student">Ученик</option>
+                <option value="tutor">Репетитор</option>
+            </select>
+            <label style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 15px; font-size: 14px;">
+                <input type="checkbox" name="agree" required style="width: auto; margin-top: 2px;">
+                <span>Я согласен на <a href="/privacy" target="_blank">обработку персональных данных</a> и принимаю <a href="/terms" target="_blank">условия использования</a></span>
+            </label>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p style="margin-top: 15px;">Уже есть аккаунт? <a href="/login">Войти</a></p>
+    }
+}

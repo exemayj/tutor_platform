@@ -1,0 +1,20 @@
+package pages
+
+import (
+    "tutor_platform/web/templates/layouts"
+)
+
+templ LoginPage(errorMsg string, user layouts.UserInfo) {
+    @layouts.Base("Вход", user) {
+        <h1>Вход</h1>
+        if errorMsg != "" {
+            <div class="alert alert-error">{ errorMsg }</div>
+        }
+        <form method="post" action="/login">
+            <input name="email" type="email" placeholder="Email" required>
+            <input name="password" type="password" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+        <p style="margin-top: 15px;">Нет аккаунта? <a href="/register">Регистрация</a></p>
+    }
+}

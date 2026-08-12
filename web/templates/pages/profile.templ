@@ -1,0 +1,61 @@
+package pages
+
+import (
+    "strconv"
+    "tutor_platform/internal/models"
+    "tutor_platform/web/templates/components"
+    "tutor_platform/web/templates/layouts"
+)
+
+templ ProfilePage(user models.User, profile *models.TutorProfile, subjects []models.Subject, userInfo layouts.UserInfo) {
+    @layouts.Base("Профиль", userInfo) {
+        <h1>Профиль</h1>
+        <p><strong>Имя:</strong> { user.Name }</p>
+        <p><strong>Email:</strong> { user.Email }</p>
+        <p><strong>Роль:</strong> { components.RoleLabel(user.Role) }</p>
+
+        if user.Role == "tutor" {
+            <hr>
+            if profile == nil {
+                <h2>Создать анкету репетитора</h2>
+                @tutorForm(models.TutorProfile{}, subjects)
+            } else {
+                <h2>Ваша анкета</h2>
+                <div class="tutor-card">
+                    <h3>{ profile.Headline }</h3>
+                    <p>{ profile.Description }</p>
+                    <p><strong>Город:</strong> { profile.City }</p>
+                    <p><strong>Образование:</strong> { profile.Education }</p>
+                    <p><strong>Опыт:</strong> { strconv.Itoa(profile.ExperienceYears) } лет</p>
+                    <p><strong>Цена:</strong> { strconv.Itoa(profile.PricePerHour) } ₽/час</p>
+                    if len(profile.Subjects) > 0 {
+                        <p><strong>Предметы:</strong> { components.SubjectNames(profile.Subjects) }</p>
+                    }
+                </div>
+                <h3>Редактировать анкету</h3>
+                @tutorForm(*profile, subjects)
+            }
+        }
+    }
+}
+
+templ tutorForm(profile models.TutorProfile, subjects []models.Subject) {
+    <form method="post" action="/profile">
+        <input name="headline" type="text" placeholder="Заголовок" value={ profile.Headline } required>
+        <textarea name="description" placeholder="О себе" rows="4" required>{ profile.Description }</textarea>
+        <input name="education" type="text" placeholder="Образование" value={ profile.Education }>
+        <input name="city" type="text" placeholder="Город" value={ profile.City } required>
+        <input name="price_per_hour" type="number" placeholder="Цена за час (₽)" value={ strconv.Itoa(profile.PricePerHour) } min="0">
+        <p><strong>Предметы:</strong></p>
+        for _, s := range subjects {
+            <label>
+                <input type="checkbox" name="subject_ids" value={ strconv.Itoa(s.ID) }
+                if components.HasSubject(profile.Subjects, s.ID) {
+                    checked
+                }
+                > { s.Name }
+            </label><br>
+        }
+        <button type="submit">Сохранить</button>
+    </form>
+}

@@ -1,0 +1,43 @@
+package pages
+
+import (
+    "fmt"
+    "strconv"
+    "tutor_platform/internal/models"
+    "tutor_platform/web/templates/layouts"
+)
+
+templ TutorPage(tutor models.TutorProfile, sentOk bool, user layouts.UserInfo) {
+    @layouts.Base(tutor.Headline, user) {
+        <a href="/catalog">← В каталог</a>
+        <h1>{ tutor.Headline }</h1>
+        <div class="meta">{ tutor.TutorName } &middot; { tutor.City }</div>
+        <div class="meta">★ { fmt.Sprintf("%.1f", tutor.Rating) } ({ strconv.Itoa(tutor.ReviewsCount) } отзывов)</div>
+        <p><strong>Образование:</strong> { tutor.Education }</p>
+        <p><strong>Опыт:</strong> { strconv.Itoa(tutor.ExperienceYears) } лет</p>
+        if tutor.PricePerHour > 0 {
+            <div class="price">{ strconv.Itoa(tutor.PricePerHour) } ₽/час</div>
+        }
+        <p>{ tutor.Description }</p>
+        if len(tutor.Subjects) > 0 {
+            <p><strong>Предметы:</strong></p>
+            <ul>
+                for _, s := range tutor.Subjects {
+                    <li>{ s.Name }</li>
+                }
+            </ul>
+        }
+        <hr style="margin: 30px 0;">
+        <h2>Связаться с репетитором</h2>
+        if sentOk {
+            <div class="alert alert-success">Заявка отправлена! Репетитор свяжется с вами.</div>
+        }
+        <form method="post" action="/orders">
+            <input type="hidden" name="tutor_profile_id" value={ tutor.ID }>
+            <input name="student_name" type="text" placeholder="Ваше имя" required>
+            <input name="student_phone" type="tel" placeholder="Телефон" required>
+            <textarea name="goal" placeholder="Цель занятий" rows="3"></textarea>
+            <button type="submit">Отправить заявку</button>
+        </form>
+    }
+}

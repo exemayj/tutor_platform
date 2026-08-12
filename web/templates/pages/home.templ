@@ -1,0 +1,41 @@
+package pages
+
+import (
+    "strconv"
+    "tutor_platform/internal/models"
+    "tutor_platform/web/templates/layouts"
+)
+
+templ HomePage(subjects []models.Subject, tutors []models.TutorProfile, user layouts.UserInfo) {
+    @layouts.Base("Поиск репетиторов", user) {
+        <h1>Найдите репетитора</h1>
+        <form action="/catalog" method="get">
+            <div class="filters">
+                <select name="subject">
+                    <option value="">Все предметы</option>
+                    for _, s := range subjects {
+                        <option value={ s.Slug }>{ s.Name }</option>
+                    }
+                </select>
+                <input name="city" type="text" placeholder="Город">
+                <input name="price_min" type="number" placeholder="Цена от" min="0">
+                <input name="price_max" type="number" placeholder="Цена до" min="0">
+                <button type="submit">Найти</button>
+            </div>
+        </form>
+        <h2>Последние репетиторы</h2>
+        if len(tutors) == 0 {
+            <p>Пока нет репетиторов. <a href="/register">Станьте первым!</a></p>
+        }
+        for _, t := range tutors {
+            <div class="tutor-card">
+                <h3><a href={ templ.URL("/tutor/" + t.ID) }>{ t.Headline }</a></h3>
+                <div class="meta">{ t.TutorName } &middot; { t.City }</div>
+                <p>{ t.Description }</p>
+                if t.PricePerHour > 0 {
+                    <div class="price">{ strconv.Itoa(t.PricePerHour) } ₽/час</div>
+                }
+            </div>
+        }
+    }
+}

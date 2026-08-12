@@ -1,0 +1,60 @@
+package pages
+
+import (
+    "fmt"
+    "strconv"
+    "tutor_platform/internal/models"
+    "tutor_platform/web/templates/components"
+    "tutor_platform/web/templates/layouts"
+)
+
+templ CatalogPage(subjects []models.Subject, tutors []models.TutorProfile, subjectSlug, city, priceMin, priceMax, sortBy string, user layouts.UserInfo) {
+    @layouts.Base("Каталог репетиторов", user) {
+        <h1>Каталог репетиторов</h1>
+        <a href="/">← На главную</a>
+        <form action="/catalog" method="get" autocomplete="off" style="max-width: 100%;">
+            <div class="filters">
+                <select name="subject">
+                    <option value="">Все предметы</option>
+                    for _, s := range subjects {
+                        if s.Slug == subjectSlug {
+                            <option value={ s.Slug } selected>{ s.Name }</option>
+                        } else {
+                            <option value={ s.Slug }>{ s.Name }</option>
+                        }
+                    }
+                </select>
+                <input name="city" type="text" placeholder="Город" value={ city }>
+                <input name="price_min" type="number" placeholder="Цена от" value={ priceMin } min="0">
+                <input name="price_max" type="number" placeholder="Цена до" value={ priceMax } min="0">
+                <select name="sort">
+                    <option value="" selected={ sortBy == "" }>Сначала новые</option>
+                    <option value="rating" selected={ sortBy == "rating" }>По рейтингу</option>
+                    <option value="price_asc" selected={ sortBy == "price_asc" }>Сначала дешёвые</option>
+                    <option value="price_desc" selected={ sortBy == "price_desc" }>Сначала дорогие</option>
+                </select>
+                <button type="submit">Найти</button>
+            </div>
+        </form>
+        <p>Найдено: { strconv.Itoa(len(tutors)) }</p>
+        if len(tutors) == 0 {
+            <p>Ничего не найдено. Попробуйте изменить фильтры.</p>
+        }
+        for _, t := range tutors {
+            <div class="tutor-card">
+                <h3><a href={ templ.URL("/tutor/" + t.ID) }>{ t.Headline }</a></h3>
+                <div class="meta">{ t.TutorName } &middot; { t.City }</div>
+                <p>{ t.Description }</p>
+                if t.ReviewsCount > 0 {
+                    <div class="meta">★ { fmt.Sprintf("%.1f", t.Rating) } ({ strconv.Itoa(t.ReviewsCount) } отзывов)</div>
+                }
+                if len(t.Subjects) > 0 {
+                    <div class="meta">Предметы: { components.SubjectNames(t.Subjects) }</div>
+                }
+                if t.PricePerHour > 0 {
+                    <div class="price">{ strconv.Itoa(t.PricePerHour) } ₽/час</div>
+                }
+            </div>
+        }
+    }
+}
