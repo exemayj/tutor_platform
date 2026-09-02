@@ -8,7 +8,7 @@ import (
     "tutor_platform/web/templates/layouts"
 )
 
-templ CatalogPage(subjects []models.Subject, tutors []models.TutorProfile, subjectSlug, city, priceMin, priceMax, sortBy string, user layouts.UserInfo) {
+templ CatalogPage(subjects []models.Subject, tutors []models.TutorProfile, subjectSlug, city, name, priceMin, priceMax, sortBy string, page int, user layouts.UserInfo) {
     @layouts.Base("Каталог репетиторов", user) {
         <h1>Каталог репетиторов</h1>
         <a href="/">← На главную</a>
@@ -24,6 +24,7 @@ templ CatalogPage(subjects []models.Subject, tutors []models.TutorProfile, subje
                         }
                     }
                 </select>
+                <input name="name" type="text" placeholder="Имя репетитора" value={ name }>
                 <input name="city" type="text" placeholder="Город" value={ city }>
                 <input name="price_min" type="number" placeholder="Цена от" value={ priceMin } min="0">
                 <input name="price_max" type="number" placeholder="Цена до" value={ priceMax } min="0">
@@ -42,8 +43,17 @@ templ CatalogPage(subjects []models.Subject, tutors []models.TutorProfile, subje
         }
         for _, t := range tutors {
             <div class="tutor-card">
+                if t.TutorAvatar != "" {
+                    <img src={ t.TutorAvatar } alt={ t.TutorName } style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+                }
                 <h3><a href={ templ.URL("/tutor/" + t.ID) }>{ t.Headline }</a></h3>
-                <div class="meta">{ t.TutorName } &middot; { t.City }</div>
+                <div class="meta">
+                    { t.TutorName }
+                    if t.IsVerified {
+                        <span style="color: #4a90d9;" title="Проверенный репетитор">✓</span>
+                    }
+                    &middot; { t.City }
+                </div>
                 <p>{ t.Description }</p>
                 if t.ReviewsCount > 0 {
                     <div class="meta">★ { fmt.Sprintf("%.1f", t.Rating) } ({ strconv.Itoa(t.ReviewsCount) } отзывов)</div>
@@ -56,5 +66,14 @@ templ CatalogPage(subjects []models.Subject, tutors []models.TutorProfile, subje
                 }
             </div>
         }
+        <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+            if page > 1 {
+                <a href={ templ.URL("/catalog?subject=" + subjectSlug + "&city=" + city + "&name=" + name + "&price_min=" + priceMin + "&price_max=" + priceMax + "&sort=" + sortBy + "&page=" + strconv.Itoa(page-1)) } class="btn">← Назад</a>
+            }
+            <span>Страница { strconv.Itoa(page) }</span>
+            if len(tutors) == 10 {
+                <a href={ templ.URL("/catalog?subject=" + subjectSlug + "&city=" + city + "&name=" + name + "&price_min=" + priceMin + "&price_max=" + priceMax + "&sort=" + sortBy + "&page=" + strconv.Itoa(page+1)) } class="btn">Вперёд →</a>
+            }
+        </div>
     }
 }

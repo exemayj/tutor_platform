@@ -22,6 +22,9 @@ templ ProfilePage(user models.User, profile *models.TutorProfile, subjects []mod
             } else {
                 <h2>Ваша анкета</h2>
                 <div class="tutor-card">
+                    if user.AvatarURL != nil {
+                        <img src={ *user.AvatarURL } alt={ user.Name } style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+                    }
                     <h3>{ profile.Headline }</h3>
                     <p>{ profile.Description }</p>
                     <p><strong>Город:</strong> { profile.City }</p>
@@ -40,12 +43,14 @@ templ ProfilePage(user models.User, profile *models.TutorProfile, subjects []mod
 }
 
 templ tutorForm(profile models.TutorProfile, subjects []models.Subject) {
-    <form method="post" action="/profile">
+    <form method="post" action="/profile" enctype="multipart/form-data">
         <input name="headline" type="text" placeholder="Заголовок" value={ profile.Headline } required>
         <textarea name="description" placeholder="О себе" rows="4" required>{ profile.Description }</textarea>
         <input name="education" type="text" placeholder="Образование" value={ profile.Education }>
         <input name="city" type="text" placeholder="Город" value={ profile.City } required>
         <input name="price_per_hour" type="number" placeholder="Цена за час (₽)" value={ strconv.Itoa(profile.PricePerHour) } min="0">
+        <label><strong>Фото:</strong></label>
+        <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" style="padding: 8px;">
         <p><strong>Предметы:</strong></p>
         for _, s := range subjects {
             <label>

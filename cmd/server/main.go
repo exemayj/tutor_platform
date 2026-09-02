@@ -29,6 +29,10 @@ func main() {
 	ordersHandler := handlers.NewOrdersHandler(db)
 	chatHandler := handlers.NewChatHandler(db)
 	adminHandler := handlers.NewAdminHandler(db)
+	reviewsHandler := handlers.NewReviewsHandler(db)
+
+	// Rate limiter: 5 запросов в секунду, максимум 10
+	authLimiter := mw.NewRateLimiter(5, 10)
 
 	r := chi.NewRouter()
 
@@ -40,9 +44,10 @@ func main() {
 	r.Handle("/static/*", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("web/static"))))
 
-	// Публичные страницы (с опциональной авторизацией — видим пользователя в шапке)
+	// Публичные страницы (с опциональной авторизацией)
 	r.Group(func(r chi.Router) {
 		r.Use(mw.OptionalAuth(cfg.JWTSecret))
+		r.Use(authLimiter.Middleware)
 
 		r.Get("/", catalogHandler.HomePage)
 		r.Get("/catalog", catalogHandler.CatalogPage)
@@ -56,8 +61,7 @@ func main() {
 		r.Get("/terms", catalogHandler.TermsPage)
 	})
 
-	reviewsHandler := handlers.NewReviewsHandler(db)
-	// Для авторизованных (обязательная авторизация)
+	// Для авторизованных
 	r.Group(func(r chi.Router) {
 		r.Use(mw.AuthMiddleware(cfg.JWTSecret))
 
@@ -68,11 +72,11 @@ func main() {
 		r.Post("/orders", ordersHandler.CreateOrder)
 		r.Get("/orders/{id}/accept", ordersHandler.AcceptOrder)
 		r.Get("/orders/{id}/decline", ordersHandler.DeclineOrder)
+		r.Get("/orders/{id}/complete", ordersHandler.CompleteOrder)
 		r.Get("/chat/{orderID}", chatHandler.ChatPage)
 		r.Get("/ws/chat/{orderID}", chatHandler.ChatWebSocket)
 		r.Post("/reviews", reviewsHandler.CreateReview)
 		r.Get("/reviews/{id}", reviewsHandler.GetReviews)
-		r.Get("/orders/{id}/complete", ordersHandler.CompleteOrder)
 	})
 
 	// Админка
@@ -83,6 +87,8 @@ func main() {
 		r.Get("/admin", adminHandler.Dashboard)
 		r.Get("/admin/tutors/{id}/block", adminHandler.BlockTutor)
 		r.Get("/admin/tutors/{id}/unblock", adminHandler.UnblockTutor)
+		r.Get("/admin/tutors/{id}/verify", adminHandler.VerifyTutor)
+		r.Get("/admin/tutors/{id}/unverify", adminHandler.UnverifyTutor)
 	})
 
 	log.Printf("Сервер на :%s", cfg.ServerPort)

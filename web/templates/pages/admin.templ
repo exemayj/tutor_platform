@@ -30,11 +30,17 @@ templ AdminDashboard(tutors []models.TutorProfile, user layouts.UserInfo) {
                             <span style="color: red;">Заблокирован</span>
                         }
                     </td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; align-items: center;">
                         if t.IsActive {
                             <a href={ templ.URL("/admin/tutors/" + t.ID + "/block") } class="btn btn-danger">Заблокировать</a>
                         } else {
                             <a href={ templ.URL("/admin/tutors/" + t.ID + "/unblock") } class="btn btn-success">Разблокировать</a>
+                        }
+                        if t.IsVerified {
+                            <span style="color: green; white-space: nowrap;">✓ Проверен</span>
+                            <a href={ templ.URL("/admin/tutors/" + t.ID + "/unverify") } class="btn btn-danger">Убрать галочку</a>
+                        } else {
+                            <a href={ templ.URL("/admin/tutors/" + t.ID + "/verify") } class="btn btn-success">Верифицировать</a>
                         }
                     </td>
                 </tr>

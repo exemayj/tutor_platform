@@ -10,8 +10,17 @@ import (
 templ TutorPage(tutor models.TutorProfile, sentOk bool, user layouts.UserInfo) {
     @layouts.Base(tutor.Headline, user) {
         <a href="/catalog">← В каталог</a>
+        if tutor.TutorAvatar != "" {
+            <img src={ tutor.TutorAvatar } alt={ tutor.TutorName } style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">
+        }
         <h1>{ tutor.Headline }</h1>
-        <div class="meta">{ tutor.TutorName } &middot; { tutor.City }</div>
+        <div class="meta">
+            { tutor.TutorName }
+            if tutor.IsVerified {
+                <span style="color: #4a90d9;" title="Проверенный репетитор">✓</span>
+            }
+            &middot; { tutor.City }
+        </div>
         <div class="meta">★ { fmt.Sprintf("%.1f", tutor.Rating) } ({ strconv.Itoa(tutor.ReviewsCount) } отзывов)</div>
         <p><strong>Образование:</strong> { tutor.Education }</p>
         <p><strong>Опыт:</strong> { strconv.Itoa(tutor.ExperienceYears) } лет</p>

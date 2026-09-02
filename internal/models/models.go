@@ -31,6 +31,7 @@ type TutorProfile struct {
 	TutorAvatar  string  `json:"tutor_avatar,omitempty"`
 	Rating       float64 `json:"rating"`
 	ReviewsCount int     `json:"reviews_count"`
+	IsVerified   bool    `json:"is_verified"`
 }
 
 type Subject struct {

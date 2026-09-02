@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -59,14 +61,19 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	r.ParseForm()
+	// Парсим multipart form (для файлов)
+	err := r.ParseMultipartForm(10 << 20) // 10 MB max
+	if err != nil {
+		http.Error(w, "Ошибка обработки формы", http.StatusBadRequest)
+		return
+	}
 
 	headline := strings.TrimSpace(r.FormValue("headline"))
 	description := strings.TrimSpace(r.FormValue("description"))
 	education := strings.TrimSpace(r.FormValue("education"))
 	city := strings.TrimSpace(r.FormValue("city"))
 	priceStr := r.FormValue("price_per_hour")
-	subjectIDs := r.Form["subject_ids"] // массив ID предметов
+	subjectIDs := r.Form["subject_ids"]
 
 	if headline == "" || description == "" || city == "" {
 		http.Error(w, "Заголовок, описание и город обязательны", http.StatusBadRequest)
@@ -75,7 +82,6 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	price := 0
 	if priceStr != "" {
-		// Простая конвертация, без лишних пакетов
 		for _, c := range priceStr {
 			if c >= '0' && c <= '9' {
 				price = price*10 + int(c-'0')
@@ -83,21 +89,58 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Создаём или обновляем анкету (UPSERT)
-	_, err := h.DB.Exec(r.Context(),
-		`INSERT INTO tutor_profiles (user_id, headline, description, education, city, price_per_hour)
-     	VALUES ($1, $2, $3, $4, $5, $6)
-     	ON CONFLICT (user_id) 
-     	DO UPDATE SET headline = $2, description = $3, education = $4, city = $5, 
-                   price_per_hour = $6`,
-		claims.UserID, headline, description, education, city, price,
-	)
+	// Обработка файла
+	avatarURL := ""
+	file, header, err := r.FormFile("avatar")
+	if err == nil {
+		defer file.Close()
+
+		// Генерируем уникальное имя файла
+		ext := ""
+		if idx := strings.LastIndex(header.Filename, "."); idx != -1 {
+			ext = header.Filename[idx:]
+		}
+		filename := claims.UserID + ext
+
+		// Сохраняем файл
+		dst, err := os.Create("web/static/uploads/" + filename)
+		if err == nil {
+			defer dst.Close()
+			io.Copy(dst, file)
+			avatarURL = "/static/uploads/" + filename
+		}
+	}
+
+	// Создаём или обновляем анкету
+	if avatarURL != "" {
+		_, err = h.DB.Exec(r.Context(),
+			`INSERT INTO tutor_profiles (user_id, headline, description, education, city, price_per_hour)
+     		 VALUES ($1, $2, $3, $4, $5, $6)
+     		 ON CONFLICT (user_id) 
+     		 DO UPDATE SET headline = $2, description = $3, education = $4, city = $5, price_per_hour = $6`,
+			claims.UserID, headline, description, education, city, price,
+		)
+	} else {
+		_, err = h.DB.Exec(r.Context(),
+			`INSERT INTO tutor_profiles (user_id, headline, description, education, city, price_per_hour)
+     		 VALUES ($1, $2, $3, $4, $5, $6)
+     		 ON CONFLICT (user_id) 
+     		 DO UPDATE SET headline = $2, description = $3, education = $4, city = $5, price_per_hour = $6`,
+			claims.UserID, headline, description, education, city, price,
+		)
+	}
+
+	// Обновляем аватарку в users
+	if avatarURL != "" {
+		h.DB.Exec(r.Context(), "UPDATE users SET avatar_url = $1 WHERE id = $2", avatarURL, claims.UserID)
+	}
+
 	if err != nil {
 		http.Error(w, "Ошибка сохранения анкеты: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Обновляем связь с предметами: удаляем старые, вставляем новые
+	// Обновляем предметы
 	h.DB.Exec(r.Context(), "DELETE FROM tutor_subjects WHERE tutor_profile_id = (SELECT id FROM tutor_profiles WHERE user_id = $1)", claims.UserID)
 
 	for _, subjID := range subjectIDs {

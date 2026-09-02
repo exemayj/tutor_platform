@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"strings"
@@ -53,7 +52,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		email,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &user.Name, &user.Phone, &user.AvatarURL)
 
-	if err == sql.ErrNoRows {
+	if err != nil {
 		http.Error(w, "Неверный email или пароль", http.StatusUnauthorized)
 		return
 	}

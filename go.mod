@@ -10,6 +10,12 @@ require (
 require github.com/a-h/templ v0.3.1020
 
 require (
+	github.com/gorilla/csrf v1.7.3 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	golang.org/x/time v0.15.0 // indirect
+)
+
+require (
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3

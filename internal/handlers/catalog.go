@@ -23,7 +23,7 @@ func NewCatalogHandler(db *pgxpool.Pool) *CatalogHandler {
 
 // HomePage — главная страница с последними репетиторами
 func (h *CatalogHandler) HomePage(w http.ResponseWriter, r *http.Request) {
-	tutors, _ := h.getTutors(r, "", "", 0, 0, 10, "")
+	tutors, _ := h.getTutors(r, "", "", "", 0, 0, 10, 0, "")
 	subjects, _ := h.getSubjects(r)
 	userInfo := layouts.GetUserInfo(r.Context())
 	pages.HomePage(subjects, tutors, userInfo).Render(r.Context(), w)
@@ -33,19 +33,26 @@ func (h *CatalogHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 func (h *CatalogHandler) CatalogPage(w http.ResponseWriter, r *http.Request) {
 	subjectSlug := r.URL.Query().Get("subject")
 	city := r.URL.Query().Get("city")
+	name := r.URL.Query().Get("name")
 	priceMinStr := r.URL.Query().Get("price_min")
 	priceMaxStr := r.URL.Query().Get("price_max")
 	sortBy := r.URL.Query().Get("sort")
-	log.Printf("SortBy: %q", sortBy)
+
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	limit := 10
+	offset := (page - 1) * limit
 
 	priceMin, _ := strconv.Atoi(priceMinStr)
 	priceMax, _ := strconv.Atoi(priceMaxStr)
 
-	tutors, _ := h.getTutors(r, subjectSlug, city, priceMin, priceMax, 50, sortBy)
+	tutors, _ := h.getTutors(r, subjectSlug, city, name, priceMin, priceMax, limit, offset, sortBy)
 	subjects, _ := h.getSubjects(r)
 	userInfo := layouts.GetUserInfo(r.Context())
 
-	pages.CatalogPage(subjects, tutors, subjectSlug, city, priceMinStr, priceMaxStr, sortBy, userInfo).Render(r.Context(), w)
+	pages.CatalogPage(subjects, tutors, subjectSlug, city, name, priceMinStr, priceMaxStr, sortBy, page, userInfo).Render(r.Context(), w)
 }
 
 func (h *CatalogHandler) TutorPage(w http.ResponseWriter, r *http.Request) {
@@ -63,19 +70,26 @@ func (h *CatalogHandler) TutorPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // getTutors — поиск репетиторов с фильтрами
-func (h *CatalogHandler) getTutors(r *http.Request, subjectSlug, city string, priceMin, priceMax, limit int, sortBy string) ([]models.TutorProfile, error) {
+func (h *CatalogHandler) getTutors(r *http.Request, subjectSlug, city, name string, priceMin, priceMax, limit, offset int, sortBy string) ([]models.TutorProfile, error) {
 	query := `
 		SELECT tp.id, tp.user_id, tp.headline, tp.description, 
 		       tp.experience_years, tp.education, tp.price_per_hour, tp.city,
-		       u.name, u.avatar_url, tp.rating, tp.reviews_count, MAX(tp.created_at) as created_at
+		       u.name, u.avatar_url, tp.rating, tp.reviews_count, tp.is_verified, MAX(tp.created_at) as created_at
 		FROM tutor_profiles tp
 		JOIN users u ON tp.user_id = u.id
 		LEFT JOIN tutor_subjects ts ON tp.id = ts.tutor_profile_id
 		LEFT JOIN subjects s ON ts.subject_id = s.id
 		WHERE tp.is_active = true
 	`
+
 	args := []interface{}{}
 	argIdx := 1
+
+	if name != "" {
+		query += " AND LOWER(u.name) LIKE LOWER($" + strconv.Itoa(argIdx) + ")"
+		args = append(args, "%"+name+"%")
+		argIdx++
+	}
 
 	if subjectSlug != "" {
 		query += " AND s.slug = $" + strconv.Itoa(argIdx)
@@ -116,6 +130,10 @@ func (h *CatalogHandler) getTutors(r *http.Request, subjectSlug, city string, pr
 
 	query += " LIMIT $" + strconv.Itoa(argIdx)
 	args = append(args, limit)
+	argIdx++
+
+	query += " OFFSET $" + strconv.Itoa(argIdx)
+	args = append(args, offset)
 
 	rows, err := h.DB.Query(r.Context(), query, args...)
 	if err != nil {
@@ -130,7 +148,7 @@ func (h *CatalogHandler) getTutors(r *http.Request, subjectSlug, city string, pr
 		var createdAt interface{}
 		err := rows.Scan(&t.ID, &t.UserID, &t.Headline, &t.Description,
 			&t.ExperienceYears, &t.Education, &t.PricePerHour, &t.City,
-			&t.TutorName, &avatarURL, &t.Rating, &t.ReviewsCount, &createdAt)
+			&t.TutorName, &avatarURL, &t.Rating, &t.ReviewsCount, &t.IsVerified, &createdAt)
 		if err != nil {
 			return nil, err
 		}
@@ -154,14 +172,14 @@ func (h *CatalogHandler) getTutorByID(r *http.Request, id string) (*models.Tutor
 	err := h.DB.QueryRow(r.Context(),
 		`SELECT tp.id, tp.user_id, tp.headline, tp.description, 
 		        tp.experience_years, tp.education, tp.price_per_hour, tp.city,
-		        u.name, u.avatar_url
+		        u.name, u.avatar_url, tp.is_verified
 		 FROM tutor_profiles tp
 		 JOIN users u ON tp.user_id = u.id
 		 WHERE tp.id = $1 AND tp.is_active = true`,
 		id,
 	).Scan(&t.ID, &t.UserID, &t.Headline, &t.Description,
 		&t.ExperienceYears, &t.Education, &t.PricePerHour, &t.City,
-		&t.TutorName, &avatarURL)
+		&t.TutorName, &avatarURL, &t.IsVerified)
 
 	if err != nil {
 		return nil, err
